@@ -1,6 +1,6 @@
-import { App, Stack, NextjsSite } from "@serverless-stack/resources";
+export default async function main(app: any) {
+  const { Stack, NextjsSite } = await import("@serverless-stack/resources");
 
-export default function main(app: App) {
   const stack = new Stack(app, "WebStack");
 
   new NextjsSite(stack, "dinosaur-viewer", {
