@@ -6,16 +6,30 @@ on:
       deploy-github-env:
         required: true
         type: string
+      aws-region:
+        required: false
+        type: string
+        default: "ap-southeast-2"
   workflow_dispatch:
+    inputs:
+      deploy-github-env:
+        description: "GitHub environment to deploy to"
+        required: true
+        type: environment
+      aws-region:
+        description: "AWS region to deploy to"
+        required: false
+        type: string
+        default: "ap-southeast-2"
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Get Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install nodejs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install Dependencies
@@ -27,9 +41,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install nodejs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install Dependencies
@@ -49,9 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install nodejs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install Dependencies
@@ -64,24 +78,24 @@ jobs:
     environment: ${{ inputs.deploy-github-env }}
     env:
       NEXT_STAGE: ${{ vars.NEXT_STAGE }}
-      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_REGION: ${{ inputs.aws-region || vars.AWS_REGION || 'ap-southeast-2' }}
     steps:
       - name: Get code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ inputs.aws-region || vars.AWS_REGION || 'ap-southeast-2' }}
       - name: Install NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install dependencies
         run: npm ci
       - name: Cache Next.js Build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             .next
