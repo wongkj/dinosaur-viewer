@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sst": "sst",
+    "deploy-dev": "npx sst deploy --stage dev",
+    "deploy-test": "npx sst deploy --stage test",
+    "deploy-prod": "npx sst deploy --stage prod"
   },
   "dependencies": {
     "next": "16.2.10",
@@ -18,8 +22,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@serverless-stack/resources": "1.18.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "sst": "^4.17.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
