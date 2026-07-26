@@ -3,12 +3,16 @@ import Home from "./page";
 
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({
-    priority,
-    ...props
-  }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) => (
-    <img {...props} />
-  ),
+  default: (
+    props: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean },
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { priority, ...imgProps } = props;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img {...imgProps} alt={imgProps.alt ?? ""} />
+    );
+  },
 }));
 
 describe("Home", () => {
