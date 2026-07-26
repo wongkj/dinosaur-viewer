@@ -1,0 +1,121 @@
+name: Deploy to the Dev Environment
+
+on:
+  workflow_call:
+    inputs:
+      deploy-github-env:
+        required: true
+        type: string
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v3
+      - name: Install nodejs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: npm ci
+      - name: Run Tests
+        run: npm run test
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v3
+      - name: Install nodejs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: npm ci
+      - name: Run Test Coverage
+        env:
+          FORCE_COLOR: 1
+        run: npm run test:coverage:check
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v3
+      - name: Install nodejs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: npm ci
+      - name: Run Linting
+        run: npm run lint
+  deploy:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.deploy-github-env }}
+    env:
+      NEXT_STAGE: ${{ vars.NEXT_STAGE }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Cache Next.js Build
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            .open-next
+            .sst
+          key:
+            cache-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s',
+            '**.[jt]sx') }}
+          restore-keys: |
+            cache-${{ hashFiles('**/package-lock.json') }}
+      - name: SST unlock (best-effort)
+        if: always()
+        run: npx sst unlock --stage ${{ vars.NEXT_STAGE }}
+      - name: Set SST Config Secret
+        run: npx sst secret set COMMIT_SHA '${{ github.sha }}' --stage ${{
+          vars.NEXT_STAGE }}
+
+      - name: Hash Secrets
+        run: echo "${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" | xxd -ps
+
+      # - name: Check for conflicting domains
+      #   run: aws cloudfront list-conflicting-aliases --distribution-id EC6RJH0CJY4MJ --alias dev.nonprod.campusnow.unimelb.edu.au
+
+      # SST v4: refresh migrates Pulumi state before deploy (https://sst.dev/docs/migrate-from-v3/). Do not use --target.
+      # SST deploy must not include aws.lambda.Invocation when state can reference a deleted Lambda (404 breaks deploy).
+      # imperva-api / imperva-dc-config-put are created only when NEXT_STAGE is dev or test (see isImpervaLambdaStage).
+      - name: SST refresh (main stack)
+        run: npx sst refresh --stage ${{ vars.NEXT_STAGE }}
+      - name: Deploy SST (Next.js + imperva-api + CDN)
+        id: sst-deploy
+        run: npm run deploy-${{ vars.NEXT_STAGE }}
+      - name: SST refresh (imperva-invoke)
+        if: success() && steps.sst-deploy.outcome == 'success' && (vars.NEXT_STAGE == 'dev' || vars.NEXT_STAGE == 'test')
+        run: npx sst refresh --config sst.imperva-invoke.config.ts --stage ${{ vars.NEXT_STAGE }}
+      - name: Clean Up AWS Profile
+        run: |
+          rm -rf ~/.aws
