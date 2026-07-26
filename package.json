@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "sst": "sst",
+    "test": "jest --runInBand --forceExit --testTimeout=15000",
+    "test:coverage": "jest --runInBand --forceExit --coverage --testTimeout=15000",
     "deploy-dev": "npx sst deploy --stage dev",
     "deploy-test": "npx sst deploy --stage test",
     "deploy-prod": "npx sst deploy --stage prod"
