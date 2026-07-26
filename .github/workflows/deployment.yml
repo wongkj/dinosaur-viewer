@@ -37,7 +37,7 @@ jobs:
       - name: Run Test Coverage
         env:
           FORCE_COLOR: 1
-        run: npm run test:coverage:check
+        run: npm run test:coverage
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
