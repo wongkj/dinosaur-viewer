@@ -1,13 +1,18 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default async function main(app: any) {
-  const { Stack, NextjsSite } = await import("@serverless-stack/resources");
-
-  const stack = new Stack(app, "WebStack");
-
-  new NextjsSite(stack, "dinosaur-viewer", {
-    path: ".",
-    environment: {
-      NEXT_STAGE: process.env.NEXT_STAGE || "",
-    },
-  });
-}
+export default $config({
+  app(input) {
+    return {
+      name: "dinosaur-viewer",
+      home: "aws",
+      removal: input?.stage === "prod" ? "retain" : "remove",
+      protect: input?.stage === "prod",
+    };
+  },
+  async run() {
+    new sst.aws.Nextjs("dinosaur-viewer", {
+      path: ".",
+      environment: {
+        NEXT_STAGE: process.env.NEXT_STAGE || "",
+      },
+    });
+  },
+});
