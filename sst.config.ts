@@ -1,5 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function main(app: any) {
-  // eslint-disable-line @typescript-eslint/no-explicit-any
   const { Stack, NextjsSite } = await import("@serverless-stack/resources");
 
   const stack = new Stack(app, "WebStack");
