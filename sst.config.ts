@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference -- SST supplies these generated global configuration types. */
+/// <reference path="./.sst/platform/config.d.ts" />
+
 export default $config({
   app(input) {
     return {
