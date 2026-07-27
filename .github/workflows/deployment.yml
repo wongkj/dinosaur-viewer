@@ -119,11 +119,9 @@ jobs:
       # - name: Check for conflicting domains
       #   run: aws cloudfront list-conflicting-aliases --distribution-id EC6RJH0CJY4MJ --alias dev.nonprod.campusnow.unimelb.edu.au
 
-      # SST v4: refresh migrates Pulumi state before deploy (https://sst.dev/docs/migrate-from-v3/). Do not use --target.
+      # `sst refresh` requires an existing SST stage, so a deploy must create the stage before it can be refreshed.
       # SST deploy must not include aws.lambda.Invocation when state can reference a deleted Lambda (404 breaks deploy).
       # imperva-api / imperva-dc-config-put are created only when NEXT_STAGE is dev or test (see isImpervaLambdaStage).
-      - name: SST refresh (main stack)
-        run: npx sst refresh --stage ${{ vars.NEXT_STAGE }}
       - name: Deploy SST (Next.js + imperva-api + CDN)
         id: sst-deploy
         run: npm run deploy-${{ vars.NEXT_STAGE }}
