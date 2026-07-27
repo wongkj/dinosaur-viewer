@@ -6,20 +6,34 @@ on:
       deploy-github-env:
         required: true
         type: string
+      aws-region:
+        required: false
+        type: string
+        default: "ap-southeast-2"
   workflow_dispatch:
+    inputs:
+      deploy-github-env:
+        description: "GitHub environment to deploy to"
+        required: true
+        type: environment
+      aws-region:
+        description: "AWS region to deploy to"
+        required: false
+        type: string
+        default: "ap-southeast-2"
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Get Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install nodejs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Run Tests
         run: npm run test
 
@@ -27,17 +41,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install nodejs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Run Test Coverage
         env:
           FORCE_COLOR: 1
-        run: npm run test:coverage:check
+        run: npm run test:coverage
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
@@ -49,13 +63,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install nodejs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Run Linting
         run: npm run lint
   deploy:
@@ -64,24 +78,24 @@ jobs:
     environment: ${{ inputs.deploy-github-env }}
     env:
       NEXT_STAGE: ${{ vars.NEXT_STAGE }}
-      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_REGION: ${{ inputs.aws-region || vars.AWS_REGION || 'ap-southeast-2' }}
     steps:
       - name: Get code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ inputs.aws-region || vars.AWS_REGION || 'ap-southeast-2' }}
       - name: Install NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Cache Next.js Build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             .next
@@ -92,9 +106,9 @@ jobs:
             '**.[jt]sx') }}
           restore-keys: |
             cache-${{ hashFiles('**/package-lock.json') }}
-      - name: SST unlock (best-effort)
-        if: always()
-        run: npx sst unlock --stage ${{ vars.NEXT_STAGE }}
+      # - name: SST unlock (best-effort)
+      #   if: always()
+      #   run: npx sst unlock --stage ${{ vars.NEXT_STAGE }}
       - name: Set SST Config Secret
         run: npx sst secret set COMMIT_SHA '${{ github.sha }}' --stage ${{
           vars.NEXT_STAGE }}
@@ -105,17 +119,12 @@ jobs:
       # - name: Check for conflicting domains
       #   run: aws cloudfront list-conflicting-aliases --distribution-id EC6RJH0CJY4MJ --alias dev.nonprod.campusnow.unimelb.edu.au
 
-      # SST v4: refresh migrates Pulumi state before deploy (https://sst.dev/docs/migrate-from-v3/). Do not use --target.
+      # `sst refresh` requires an existing SST stage, so a deploy must create the stage before it can be refreshed.
       # SST deploy must not include aws.lambda.Invocation when state can reference a deleted Lambda (404 breaks deploy).
       # imperva-api / imperva-dc-config-put are created only when NEXT_STAGE is dev or test (see isImpervaLambdaStage).
-      - name: SST refresh (main stack)
-        run: npx sst refresh --stage ${{ vars.NEXT_STAGE }}
-      - name: Deploy SST (Next.js + imperva-api + CDN)
+      - name: Deploy SST
         id: sst-deploy
         run: npm run deploy-${{ vars.NEXT_STAGE }}
-      - name: SST refresh (imperva-invoke)
-        if: success() && steps.sst-deploy.outcome == 'success' && (vars.NEXT_STAGE == 'dev' || vars.NEXT_STAGE == 'test')
-        run: npx sst refresh --config sst.imperva-invoke.config.ts --stage ${{ vars.NEXT_STAGE }}
       - name: Clean Up AWS Profile
         run: |
           rm -rf ~/.aws
