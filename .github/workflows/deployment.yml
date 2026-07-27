@@ -122,12 +122,9 @@ jobs:
       # `sst refresh` requires an existing SST stage, so a deploy must create the stage before it can be refreshed.
       # SST deploy must not include aws.lambda.Invocation when state can reference a deleted Lambda (404 breaks deploy).
       # imperva-api / imperva-dc-config-put are created only when NEXT_STAGE is dev or test (see isImpervaLambdaStage).
-      - name: Deploy SST (Next.js + imperva-api + CDN)
+      - name: Deploy SST
         id: sst-deploy
         run: npm run deploy-${{ vars.NEXT_STAGE }}
-      - name: SST refresh (imperva-invoke)
-        if: success() && steps.sst-deploy.outcome == 'success' && (vars.NEXT_STAGE == 'dev' || vars.NEXT_STAGE == 'test')
-        run: npx sst refresh --config sst.imperva-invoke.config.ts --stage ${{ vars.NEXT_STAGE }}
       - name: Clean Up AWS Profile
         run: |
           rm -rf ~/.aws
