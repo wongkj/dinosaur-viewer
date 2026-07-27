@@ -106,9 +106,9 @@ jobs:
             '**.[jt]sx') }}
           restore-keys: |
             cache-${{ hashFiles('**/package-lock.json') }}
-      - name: SST unlock (best-effort)
-        if: always()
-        run: npx sst unlock --stage ${{ vars.NEXT_STAGE }}
+      # - name: SST unlock (best-effort)
+      #   if: always()
+      #   run: npx sst unlock --stage ${{ vars.NEXT_STAGE }}
       - name: Set SST Config Secret
         run: npx sst secret set COMMIT_SHA '${{ github.sha }}' --stage ${{
           vars.NEXT_STAGE }}
