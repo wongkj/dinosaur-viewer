@@ -16,24 +16,19 @@ jest.mock("next/image", () => ({
 }));
 
 describe("Home", () => {
-  it("renders the getting started heading", () => {
+  it("renders the page heading", () => {
     render(<Home />);
 
     expect(
       screen.getByRole("heading", {
-        name: /To get started, edit the page.tsx file./i,
+        name: /Dinosaur Viewer/i,
       }),
     ).toBeInTheDocument();
   });
 
-  it("renders links to documentation and deploy", () => {
+  it("renders the main landmark", () => {
     render(<Home />);
 
-    expect(
-      screen.getByRole("link", { name: /Deploy Now/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Documentation/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("main")).toBeInTheDocument();
   });
 });
