@@ -9,7 +9,7 @@ on:
 
 jobs:
   trigger-dev-workflows:
-    if: ${{ (github.head_ref != 'develop') && (github.head_ref != 'uat') && (github.head_ref != 'master') }}
+    if: ${{ (github.head_ref != 'develop') && (github.head_ref != 'main') }}
     uses: ./.github/workflows/deployment.yml
     secrets: inherit
     with:

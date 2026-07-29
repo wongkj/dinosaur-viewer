@@ -1,0 +1,16 @@
+name: Trigger Production workflows
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  trigger-prod-workflows:
+    if: ${{ github.head_ref == 'develop' }}
+    uses: ./.github/workflows/deployment.yml
+    secrets: inherit
+    with:
+      deploy-github-env: "Production"
