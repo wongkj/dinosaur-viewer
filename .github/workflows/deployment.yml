@@ -1,0 +1,127 @@
+name: Deploy to the Dev Environment
+
+on:
+  workflow_call:
+    inputs:
+      deploy-github-env:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: "ap-southeast-2"
+  workflow_dispatch:
+    inputs:
+      deploy-github-env:
+        description: "GitHub environment to deploy to"
+        required: true
+        type: environment
+      aws-region:
+        description: "AWS region to deploy to"
+        required: false
+        type: string
+        default: "ap-southeast-2"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v4
+      - name: Install nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+      - name: Run Tests
+        run: npm run test
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v4
+      - name: Install nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+      - name: Run Test Coverage
+        env:
+          FORCE_COLOR: 1
+        run: npm run test:coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v4
+      - name: Install nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+      - name: Run Linting
+        run: npm run lint
+  deploy:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.deploy-github-env }}
+    env:
+      NEXT_STAGE: ${{ vars.NEXT_STAGE }}
+      AWS_REGION: ${{ inputs.aws-region || vars.AWS_REGION || 'ap-southeast-2' }}
+      AWS_DEFAULT_REGION: ${{ inputs.aws-region || vars.AWS_REGION || 'ap-southeast-2' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+      - name: Install NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Cache Next.js Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next
+            .open-next
+            .sst
+          key:
+            cache-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s',
+            '**.[jt]sx') }}
+          restore-keys: |
+            cache-${{ hashFiles('**/package-lock.json') }}
+      # - name: SST unlock (best-effort)
+      #   if: always()
+      #   run: npx sst unlock --stage ${{ vars.NEXT_STAGE }}
+      - name: Set SST Config Secret
+        run: npx sst secret set COMMIT_SHA '${{ github.sha }}' --stage ${{
+          vars.NEXT_STAGE }}
+
+      - name: Hash Secrets
+        run: echo "${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" | xxd -ps
+
+      # - name: Check for conflicting domains
+      #   run: aws cloudfront list-conflicting-aliases --distribution-id EC6RJH0CJY4MJ --alias dev.nonprod.campusnow.unimelb.edu.au
+
+      # `sst refresh` requires an existing SST stage, so a deploy must create the stage before it can be refreshed.
+      # SST deploy must not include aws.lambda.Invocation when state can reference a deleted Lambda (404 breaks deploy).
+      # imperva-api / imperva-dc-config-put are created only when NEXT_STAGE is dev or test (see isImpervaLambdaStage).
+      - name: Deploy SST
+        id: sst-deploy
+        run: npm run deploy-${{ vars.NEXT_STAGE }}
+      - name: Clean Up AWS Profile
+        run: |
+          rm -rf ~/.aws

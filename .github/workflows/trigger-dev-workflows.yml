@@ -1,0 +1,20 @@
+name: Trigger Dev workflows
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  trigger-dev-workflows:
+    if: ${{ (github.head_ref != 'develop') && (github.head_ref != 'main') }}
+    uses: ./.github/workflows/deployment.yml
+    secrets: inherit
+    with:
+      deploy-github-env: "Development"
+  # Comment
+  # trigger-release:
+  #   needs: [trigger-dev-workflows]
+  #   uses: ./.github/workflows/release.yml
