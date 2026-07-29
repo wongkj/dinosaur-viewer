@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navigation = [
-  { name: "About", href: "/about", current: true },
-  { name: "Information", href: "/information", current: false },
+  { name: "About", href: "/about" },
+  { name: "Information", href: "/information" },
 ];
 
 // const userMenu = [
@@ -14,11 +16,15 @@ const navigation = [
 // ];
 
 export const Navbar = () => {
+  const pathname = usePathname() ?? "";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  const isCurrentPath = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+
   return (
-    <nav className="sticky top-0 z-50 w-full bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-gray-800/80">
+    <nav className="sticky top-0 z-50 w-full bg-gray-800/95 backdrop-blur supports-backdrop-filter:bg-gray-800/80">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
@@ -76,18 +82,18 @@ export const Navbar = () => {
             <div className="hidden sm:ml-6 sm:block">
               <div className="flex space-x-4">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
                     href={item.href}
-                    aria-current={item.current ? "page" : undefined}
+                    aria-current={isCurrentPath(item.href) ? "page" : undefined}
                     className={
-                      item.current
+                      isCurrentPath(item.href)
                         ? "rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white"
                         : "rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white"
                     }
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -122,18 +128,18 @@ export const Navbar = () => {
         <div id="mobile-menu" className="block sm:hidden">
           <div className="space-y-1 px-2 pt-2 pb-3">
             {navigation.map((item) => (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
-                aria-current={item.current ? "page" : undefined}
+                aria-current={isCurrentPath(item.href) ? "page" : undefined}
                 className={
-                  item.current
+                  isCurrentPath(item.href)
                     ? "block rounded-md bg-gray-900 px-3 py-2 text-base font-medium text-white"
                     : "block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
                 }
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
