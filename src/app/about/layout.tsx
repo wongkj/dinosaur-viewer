@@ -5,7 +5,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <div className="mx-auto px-2">{children}</div>
+      <div className="mx-auto px-20">{children}</div>
     </>
   );
 }
