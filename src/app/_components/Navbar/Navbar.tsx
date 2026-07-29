@@ -3,21 +3,19 @@
 import { useState } from "react";
 
 const navigation = [
-  { name: "Dashboard", href: "#", current: true },
-  { name: "Team", href: "#", current: false },
-  { name: "Projects", href: "#", current: false },
-  { name: "Calendar", href: "#", current: false },
+  { name: "About", href: "/about", current: true },
+  { name: "Information", href: "/information", current: false },
 ];
 
-const userMenu = [
-  { name: "Your profile", href: "#" },
-  { name: "Settings", href: "#" },
-  { name: "Sign out", href: "#" },
-];
+// const userMenu = [
+//   { name: "Your profile", href: "#" },
+//   { name: "Settings", href: "#" },
+//   { name: "Sign out", href: "#" },
+// ];
 
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  // const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-gray-800/80">
@@ -116,38 +114,6 @@ export const Navbar = () => {
                 />
               </svg>
             </button>
-            <div className="relative ml-3">
-              <button
-                type="button"
-                aria-haspopup="menu"
-                aria-expanded={isUserMenuOpen}
-                onClick={() => setIsUserMenuOpen((open) => !open)}
-                className="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                <span className="absolute -inset-1.5"></span>
-                <span className="sr-only">Open user menu</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                  alt="User avatar"
-                  className="size-8 rounded-full bg-gray-800 outline -outline-offset-1 outline-white/10"
-                />
-              </button>
-
-              {isUserMenuOpen ? (
-                <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg outline outline-black/5">
-                  {userMenu.map((item) => (
-                    <a
-                      key={item.name}
-                      href={item.href}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-hidden"
-                    >
-                      {item.name}
-                    </a>
-                  ))}
-                </div>
-              ) : null}
-            </div>
           </div>
         </div>
       </div>
